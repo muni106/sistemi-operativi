@@ -1,6 +1,8 @@
 #include <stdio.h>
-#include <dimezza.h>
-#include <quadrato.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include "dimezza.h"
+#include "quadrato.h"
 
 static double salva=0;
 
@@ -9,6 +11,6 @@ int main(){
     num = dimezzaCos(num);
     num = quadrato(num);
     salva = num;
-    printf("%d", &num);
+    printf("%f\n", num);
     return 0;
 }
