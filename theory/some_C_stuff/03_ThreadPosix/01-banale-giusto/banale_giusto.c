@@ -38,16 +38,17 @@ int main()
 		}
 		*p=t;
 		printf("Creating thread %d\n", t);
-		rc = pthread_create (&tid, NULL, PrintHello, p );  /* NOTARE ora l'ultimo parametro */
+		rc = pthread_create (&tid, NULL, PrintHello, (void *) p );  /* pthread_create restituisce 0 se va bene e 1 se non va bene*/
 		if (rc){
 			printf("ERROR; return code from pthread_create() is %d\n",rc);
 			exit(-1); /* termina il processo */
-		}
+		} 
 
 	}
 
 	printf("fine main\n"); fflush(stdout); /* libera il buffer */
+
+	pthread_exit (NULL); /*termina il thread: il Pthread non vuole restituire un qualche risultato (NULL) */	
 	
-	pthread_exit (NULL); /*termina il thread: il Pthread non vuole restituire un qualche risultato (NULL) */
 	return(0);
 }

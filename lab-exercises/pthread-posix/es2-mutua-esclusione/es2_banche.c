@@ -49,7 +49,7 @@ void *Depositi (void *arg)
 
 		/* DEVO ENTRARE IN SEZIONE CRITICA */
 		/* AGGIUNGERE CODICE PER ENTRARE IN SEZIONE CRITICA */
-
+		
 
 
 		/* FINE AGGIUNTA */
