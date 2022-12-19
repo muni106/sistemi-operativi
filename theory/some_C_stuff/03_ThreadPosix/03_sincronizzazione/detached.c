@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <pthread.h>
 
-#define NUM_THREADS 5
+#define NUM_THREADS 2
 
 int Glob=10;
 void *do_thread(void *p_index)
@@ -43,6 +43,7 @@ int main()
 	pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_DETACHED); /*qui viene settata detatched*/
 
 	/* adesso posso utilizzare la struttura dati per creare dei thread che siano detatched*/
+	/* per default gli attributi dei thread sono joinable */
 
 	for(t=0;t < NUM_THREADS;t++){
 
@@ -66,7 +67,7 @@ int main()
 		
 			
 	}
-	pthread_attr_destroy(&attr);
+	pthread_attr_destroy(&attr); /* rilascia la memoria allocata dalla struttura dati attr */
 
 	pthread_exit (NULL);
 	/* i thread creati continuano l'esecuzione anche dopo la fine del main */

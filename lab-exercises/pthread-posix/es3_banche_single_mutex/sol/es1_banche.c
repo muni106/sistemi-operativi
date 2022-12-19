@@ -1,4 +1,4 @@
-/* file:  es2_banche.c */
+/* file:  es1_banche.c */
 
 
 #include <unistd.h> 
@@ -25,8 +25,8 @@ typedef struct struttura {
 double T[NUMBANCHE];
 int    N[NUMBANCHE];
 
-/* variabili per la sincronizzazione */
-pthread_mutex_t    mutex[NUMBANCHE];
+/* variabile per la mutua esclusione */
+pthread_mutex_t    mutex;
 
 void *Depositi (void *arg) 
 { 
@@ -43,17 +43,14 @@ void *Depositi (void *arg)
 	while(1) 
 	{
 		int rc;
-        struct timespec ts={0, 400000000L }; /* 4/10 sec */
+                struct timespec ts={0, 400000000L }; /* 4/10 sec */
 
 		sleep(1);
 
 		/* DEVO ENTRARE IN SEZIONE CRITICA */
-		/* AGGIUNGERE CODICE PER ENTRARE IN SEZIONE CRITICA */
-		rc = pthread_mutex_lock(&mutex[indicebanca]);
-		if(rc) PrintERROR_andExit(rc, "pthread_mutex_lock failed in Depositi");
-
-		/* FINE AGGIUNTA */
-
+		/* PRENDO LA MUTUA ESCLUSIONE */
+		rc=pthread_mutex_lock(&mutex);
+		if(rc) PrintERROR_andExit(rc,"Deposito lock failed");
 
 		/* MODIFICO TOTALE DI BANCA E STAMPO VALORI */ 
 		T[indicebanca] += 10.0;
@@ -63,12 +60,9 @@ void *Depositi (void *arg)
 		nanosleep(&ts,NULL);
 
 		/* ESCO DALLA SEZIONE CRITICA */
-		/* AGGIUNGERE CODICE PER USCIRE DALLA SEZIONE CRITICA */
-		rc = pthread_mutex_unlock(&mutex[indicebanca]);
-		if(rc) PrintERROR_andExit(rc, "pthread_mutex_unlock failed in Depositi");
-
-		/* FINE AGGIUNTA */
-
+		/* RILASCIO LA MUTUA ESCLUSIONE */
+		rc=pthread_mutex_unlock(&mutex); 
+		if(rc) PrintERROR_andExit(rc,"Deposito unlock failed");
 	}
 	pthread_exit(NULL); 
 } 
@@ -88,18 +82,14 @@ void *Prelievi (void *arg)
 	while(1) 
 	{
 		int rc;
-        struct timespec ts={0, 400000000L }; /* 4/10 sec */
+                struct timespec ts={0, 400000000L }; /* 4/10 sec */
 
 		sleep(1);
 
 		/* DEVO ENTRARE IN SEZIONE CRITICA */
-		/* AGGIUNGERE CODICE PER ENTRARE IN SEZIONE CRITICA */
-		rc = pthread_mutex_lock(&mutex[indicebanca]);
-		if(rc) PrintERROR_andExit(rc, "Pthread_mutex_lock failed in Prelievi");
-
-
-		/* FINE AGGIUNTA */
-
+		/* PRENDO LA MUTUA ESCLUSIONE */
+		rc=pthread_mutex_lock(&mutex); 
+		if(rc) PrintERROR_andExit(rc,"Prelievo lock failed");
 
 		/* MODIFICO TOTALE DI BANCA E STAMPO VALORI */ 
 		T[indicebanca] -=9.0 ;
@@ -109,12 +99,9 @@ void *Prelievi (void *arg)
 		nanosleep(&ts,NULL);
 
 		/* ESCO DALLA SEZIONE CRITICA */
-		/* AGGIUNGERE CODICE PER USCIRE DALLA SEZIONE CRITICA */
-		rc = pthread_mutex_unlock(&mutex[indicebanca]);
-		if(rc) PrintERROR_andExit(rc, "pthread_mutex_unlock failed in Prelievi");
-
-		/* FINE AGGIUNTA */
-
+		/* RILASCIO LA MUTUA ESCLUSIONE */
+		rc=pthread_mutex_unlock(&mutex); 
+		if(rc) PrintERROR_andExit(rc,"Deposito unlock failed");
 	}
 	pthread_exit(NULL); 
 } 
@@ -131,16 +118,13 @@ void *BancadItalia (void *arg)
 		int i;  int Num=0; double sum=0.0;
 
 		/* DEVO ENTRARE IN SEZIONE CRITICA */
-		/* AGGIUNGERE CODICE PER ENTRARE IN SEZIONE CRITICA */
-		for(i = 0; i<NUMBANCHE; i++){
-			rc = pthread_mutex_lock(&mutex[i]);
-			if(rc) PrintERROR_andExit(rc, "pthread_mutex_lock failed");
-		}
-
-		/* FINE AGGIUNTA */
+		/* PRENDO LA MUTUA ESCLUSIONE */
+		rc=pthread_mutex_lock(&mutex);
+		if(rc) PrintERROR_andExit(rc,"BancaItalia lock failed");
 
 		/* CALCOLO LA SOMMA DEI DEPOSITI DI TUTTE LE BANCHE
-		   e la metto in var locali 
+		   ED IL NUMERO DI OPERAZIONI TOTALI FATTE
+		   e le metto in var locali 
 		*/
 		for( i=0; i<NUMBANCHE; i++ ) {
 			Num += N[i];
@@ -148,15 +132,9 @@ void *BancadItalia (void *arg)
 		}
 
 		/* ESCO DALLA SEZIONE CRITICA */
-		/* AGGIUNGERE CODICE PER USCIRE DALLA SEZIONE CRITICA */
-		for(i=0;i<NUMBANCHE;i++){
-			rc = pthread_mutex_unlock(&mutex[i]);
-			if(rc) PrintERROR_andExit(rc, "Pthread_mutex_unlock failed");
-		}
-		
-
-		/* FINE AGGIUNTA */
-
+		/* RILASCIO LA MUTUA ESCLUSIONE */
+		rc=pthread_mutex_unlock(&mutex); 
+		if(rc) PrintERROR_andExit(rc,"BancaItalia unlock failed");
 
 		/* STAMPO SOMMA CALCOLATA */ 
 		printf("Report BancaDItalia: Num %d  sum %f \n", Num, sum);
@@ -175,10 +153,8 @@ int main (int argc, char* argv[] )
 	STRUTTURA *ptr;
 
 	/* INIZIALIZZO VAR MUTEX */
-	for( i=0; i<NUMBANCHE; i++ ) {
-		rc = pthread_mutex_init( &mutex[i], NULL); 
-		if( rc ) PrintERROR_andExit(rc,"pthread_mutex_init failed");
-	}
+	rc = pthread_mutex_init( &mutex, NULL); 
+	if( rc ) PrintERROR_andExit(rc,"pthread_mutex_init failed");
 
 	/* INIZIALIZZO VAR Totale e Contatori operazioni */
 	for( i=0; i<NUMBANCHE; i++ ) {
@@ -186,13 +162,12 @@ int main (int argc, char* argv[] )
 		N[i]=0;
 	}
 
-
 	/* FACCIO PARTIRE pthread  */
 	for(i=0;i<NUMBANCHE;i++) {
 		/* lancio  thread Depositi */
 		for(k=0;k<NUMDEPOSITIPERBANCA;k++) {
 			ptr=malloc( sizeof(STRUTTURA) );
-			if( ptr == NULL ) 
+			if( !ptr ) 
 				{ printf("malloc failed\n");fflush(stdout);exit(9); }
 			ptr->indicebanca=i;
 			ptr->indicethread=k;
@@ -212,7 +187,6 @@ int main (int argc, char* argv[] )
 	}
 
 	/* lancio thread BancadItalia */
-	/* BancadItalia((void*)NULL); */
 	rc=pthread_create( &th, NULL,BancadItalia,(void*)NULL ); 
 	if(rc) PrintERROR_andExit(rc,"pthread_create failed");
 

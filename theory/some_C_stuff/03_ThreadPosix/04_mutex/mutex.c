@@ -16,7 +16,7 @@
 #define NUMTHRDS 10
 
 pthread_t callThd[NUMTHRDS];
-pthread_mutex_t mutexdata;   
+pthread_mutex_t mutexdata;   /* abbiamo scelto forma di inizializzazione dinamica */
 /* this variable can be initialized statically with default attributes, using
    pthread_mutex_t mutexdata = PTHREAD_MUTEX_INITIALIZER;  
    same as pthread_mutex_init(...,NULL)
@@ -28,14 +28,17 @@ int data;
 void *decrementa(void *arg)
 {
 	int rc;
-	rc = pthread_mutex_lock (&mutexdata);  /* provare a commentare */ 
+	rc = pthread_mutex_lock (&mutexdata);  /* blocca  */ 
+	/* se la pthread mutex lock non mi restituisce un errore*/
 	if( rc ) PrintERROR_andExit(rc,"pthread_mutex_lock failed"); 
 	if(data>0) {
 		sleep(1); 
 		data--;
 	}
-	rc = pthread_mutex_unlock (&mutexdata); /* provare a commentare */
+	
+	rc = pthread_mutex_unlock (&mutexdata); /* serve per sbloccare l'accesso alla mutex */
 	if( rc ) PrintERROR_andExit(rc,"pthread_mutex_unlock failed"); 
+	
 	pthread_exit((void*) 0);
 }
 
@@ -45,15 +48,18 @@ int main (int argc, char *argv[])
 	int rc; void *ptr; 
 
 	data=NUMTHRDS/2;
-	rc = pthread_mutex_init ( &mutexdata, NULL);
-	if( rc != 0 ) PrintERROR_andExit( rc,"pthread_mutex_init failed"); 
+	rc = pthread_mutex_init ( &mutexdata, NULL); /* inizializzazione pthread mutex => ritorna 1 se andata male */
+	if( rc != 0 ) PrintERROR_andExit( rc,"pthread_mutex_init failed");  /* controllo errore inizializzazione mutex */
+
+	/* creo i miei thread */
 	for(i=0;i < NUMTHRDS;i++) 	{
 		/* per default i thread consentono il join, */
 		rc = pthread_create ( &callThd[i], NULL, decrementa, (void *)i );
 		if( rc != 0 ) PrintERROR_andExit(rc,"pthread_create failed"); 
 	}
 
-	for(i=0;i < NUMTHRDS;i++) { /* aspetto la fine dei thread */
+	/* mi metto in attesa che i miei thread terminino */
+	for(i=0;i < NUMTHRDS;i++) { 
 		rc = pthread_join ( callThd[i], &ptr);
 		if( rc != 0 ) PrintERROR_andExit(rc,"pthread_join failed"); 
 	}
