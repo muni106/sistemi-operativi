@@ -1,9 +1,9 @@
 #!/bin/bash
 for file in `ls /usr/include/` ; do
-	if [[	-d /usr/include/$name &&	\
-		-r /usr/include/$name && \
-		/usr/include/$name -nt /usr/include/stio.h ]];
+	if [[	-d /usr/include/$file &&	\
+		-r /usr/include/$file && \
+		/usr/include/$file -nt /usr/include/stio.h ]];
 		then
-			echo /usr/include/$name
+			echo /usr/include/$file
 	fi
 done

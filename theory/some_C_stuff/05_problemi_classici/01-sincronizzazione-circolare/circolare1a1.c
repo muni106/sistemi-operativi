@@ -42,6 +42,7 @@ uint64_t countPrimo=0, countSecondo=0;
 void *Primo (void *arg) 
 { 
 	while(1) {
+		sleep(4);
 		/* aspettiamo che il secondo ci risvegli */
 		DBGpthread_mutex_lock(&mutex,"1"); 
 
@@ -103,6 +104,7 @@ void *Secondo (void *arg)
 	   perche' e' stato settato PrimoFaiWait=0
 	   */
 	while(1) {
+		
 		/* aspettiamo che il Primo ci risvegli */
 		DBGpthread_mutex_lock(&mutex,"2"); 
 
@@ -115,6 +117,7 @@ void *Secondo (void *arg)
 		if( SecondoFaiWait ) {
 			DBGpthread_cond_wait(&cond,&mutex,"2");
 		}
+		sleep(4);
 		/* al prossimo giro Secondo devo fare la wait, 
 		   a meno che Primo non faccia la signal
 		   prima che Secondo tenti di fare la wait
